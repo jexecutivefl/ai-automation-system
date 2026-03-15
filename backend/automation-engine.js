@@ -150,9 +150,11 @@ app.get('/api/health', async (req, res) => {
 // Start server
 // ---------------------------------------------------------------------------
 
-app.listen(PORT, () => {
-  console.log(`Automation engine running on port ${PORT}`);
-  console.log(`Classification API: ${CLASSIFICATION_API_URL}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Automation engine running on port ${PORT}`);
+    console.log(`Classification API: ${CLASSIFICATION_API_URL}`);
+  });
+}
 
 module.exports = app;

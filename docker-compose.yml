@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  classification-api:
+    build: ./api
+    ports:
+      - "5001:5001"
+    environment:
+      - PORT=5001
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - CLASSIFICATION_API_URL=http://classification-api:5001
+    depends_on:
+      - classification-api
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend

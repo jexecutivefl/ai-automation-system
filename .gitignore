@@ -8,3 +8,6 @@ build/
 .DS_Store
 *.egg-info/
 .vite/
+venv/
+.pytest_cache/
+coverage/
