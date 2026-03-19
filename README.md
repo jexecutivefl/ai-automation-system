@@ -1,157 +1,140 @@
 # AI Automation Workflow System
 
-An AI-powered automation system that processes incoming data, classifies it using AI models, and routes it to the correct workflow automatically. Built to eliminate manual data processing and improve operational efficiency.
+A production-grade AI-powered automation platform that intelligently classifies, routes, and manages incoming business requests. Built as a polished SaaS demo showcasing modern full-stack development with AI integration.
 
----
+## Features
 
-## Architecture
-
-```
-            Incoming Data
-                 |
-                 v
-           API Gateway         (Express — port 3001)
-                 |
-                 v
-        AI Classification      (Flask — port 5001)
-                 |
-                 v
-       Workflow Orchestrator   (Node.js module)
-             /   |   \
-            v    v    v
-         CRM  Tickets  Billing
-```
-
----
-
-## Key Features
-
-- **AI Classification Engine** — Categorizes incoming text into support tickets, sales leads, billing, technical issues, or general inquiries
-- **Workflow Orchestration** — Automatically routes classified data to the appropriate downstream system (Zendesk, Salesforce, Stripe, Jira)
-- **Webhook Ingestion** — Accepts incoming data via REST API and webhook endpoints
-- **Real-time Dashboard** — React-based monitoring UI with live stats, classification breakdown charts, and a manual test panel
-
----
+- **AI-Powered Classification** — Automatic categorization of incoming requests using keyword-based mock classifier or OpenAI GPT-4o-mini
+- **Intelligent Routing** — Automated workflow routing to appropriate teams (Zendesk, Salesforce, Stripe, Jira, etc.)
+- **Multi-Source Ingestion** — Accept requests via webhook, web forms, email, Slack, API, and file uploads
+- **Real-Time Dashboard** — Analytics overview with stats cards, category breakdown, priority distribution, and recent activity
+- **Request Management** — Filterable list with search, category/status/priority filters, and pagination
+- **Detailed Request View** — Full request analysis with AI classification results, extracted fields, confidence scores, and automation timeline
+- **Workflow Tracking** — Complete workflow execution history with status tracking
+- **Activity Log** — Comprehensive event log for full audit trail
+- **Reclassification** — Retry AI classification on any request with one click
+- **Demo Mode** — Built-in seed data (25+ realistic records) and testing tools
+- **Webhook Endpoint** — REST API for external system integration
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Classification API | Python, Flask, OpenAI API |
-| Backend Engine | Node.js, Express, Axios |
-| Workflow Orchestrator | Node.js |
-| Frontend Dashboard | React, TypeScript, Recharts, Vite |
-
----
+| Framework | Next.js 15 (App Router) |
+| Language | TypeScript |
+| UI | React 19, Tailwind CSS 4 |
+| Database | SQLite (better-sqlite3) |
+| AI | OpenAI GPT-4o-mini (mock fallback) |
+| Charts | Recharts |
 
 ## Quick Start
 
-The system runs as three services. Open three terminals:
-
-**Terminal 1 — Classification API (port 5001)**
 ```bash
-cd api
-pip install -r requirements.txt
-python classification-api.py
-```
-
-**Terminal 2 — Automation Engine (port 3001)**
-```bash
-cd backend
+# Install dependencies
 npm install
-npm start
-```
 
-**Terminal 3 — Dashboard (port 5173)**
-```bash
-cd frontend
-npm install
+# Start development server
 npm run dev
+
+# Open in browser
+open http://localhost:3000
+
+# Navigate to /demo and click "Seed Demo Data" to populate the database
 ```
 
-Open http://localhost:5173 to view the dashboard.
+## Environment Variables
 
----
-
-## API Reference
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/classify` | POST | Classify text (Classification API) |
-| `/health` | GET | Classification API health check |
-| `/categories` | GET | List supported categories |
-| `/webhook` | POST | Ingest and process data (Engine) |
-| `/api/stats` | GET | Aggregated statistics |
-| `/api/logs` | GET | Processed request logs |
-| `/api/health` | GET | Engine health check |
-
----
-
-## Example Usage
+Copy `.env.example` to `.env.local`:
 
 ```bash
-# Classify text directly
-curl -X POST http://localhost:5001/classify \
-  -H "Content-Type: application/json" \
-  -d '{"text": "I need a refund for my recent purchase"}'
-
-# Process through full pipeline
-curl -X POST http://localhost:3001/webhook \
-  -H "Content-Type: application/json" \
-  -d '{"text": "I need a refund for my recent purchase", "source": "email"}'
+cp .env.example .env.local
 ```
 
----
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CLASSIFIER_MODE` | `mock` | Classification mode: `mock` or `openai` |
+| `OPENAI_API_KEY` | _(empty)_ | OpenAI API key (required for `openai` mode) |
+| `DATABASE_PATH` | `./data/automation.db` | SQLite database file location |
 
 ## Project Structure
 
 ```
-ai-automation-system/
-├── api/
-│   ├── classification-api.py      # Flask classification microservice
-│   └── requirements.txt
-├── backend/
-│   ├── automation-engine.js       # Express API server
-│   └── package.json
-├── automation/
-│   └── workflow-orchestrator.js   # Workflow routing module
-├── frontend/
-│   ├── dashboard-ui.tsx           # React dashboard component
-│   ├── main.tsx                   # Entry point
-│   ├── index.html                 # Vite HTML template
-│   ├── vite.config.ts             # Vite configuration
-│   ├── tsconfig.json
-│   └── package.json
-└── docs/
-    ├── architecture.md            # System architecture
-    ├── demo-script.md             # Demo walkthrough
-    └── portfolio-description.md   # Project description
+src/
+├── app/                          # Next.js App Router
+│   ├── layout.tsx                # Root layout with sidebar
+│   ├── page.tsx                  # Redirect to /dashboard
+│   ├── dashboard/page.tsx        # Analytics dashboard
+│   ├── requests/page.tsx         # Request list with filters
+│   ├── requests/[id]/page.tsx    # Request detail with AI results
+│   ├── workflows/page.tsx        # Workflow execution history
+│   ├── logs/page.tsx             # Activity event log
+│   ├── settings/page.tsx         # System configuration
+│   ├── demo/page.tsx             # Testing & demo tools
+│   └── api/                      # API routes
+│       ├── webhook/route.ts      # POST - ingest external requests
+│       ├── requests/route.ts     # GET/POST - list/create requests
+│       ├── requests/[id]/        # GET/PATCH - request detail/update
+│       ├── workflows/route.ts    # GET - list workflows
+│       ├── logs/route.ts         # GET - list automation logs
+│       ├── stats/route.ts        # GET - dashboard statistics
+│       ├── health/route.ts       # GET - health check
+│       └── seed/route.ts         # POST - seed demo data
+├── lib/                          # Shared server-side code
+│   ├── types.ts                  # TypeScript interfaces & enums
+│   ├── db.ts                     # SQLite connection & schema
+│   ├── seed.ts                   # Demo data (25+ records)
+│   ├── ai-service.ts             # AI classification (mock + OpenAI)
+│   └── workflow-engine.ts        # Workflow routing engine
+└── components/                   # React UI components
+    ├── layout/sidebar.tsx        # Navigation sidebar
+    └── shared/                   # Reusable UI components
+        ├── badge.tsx             # Category/status/priority badges
+        ├── card.tsx              # Card wrapper
+        ├── confidence-bar.tsx    # Confidence score visualization
+        ├── empty-state.tsx       # Empty state placeholder
+        └── timeline.tsx          # Automation event timeline
 ```
 
----
+## API Endpoints
 
-## Configuration
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/webhook` | Ingest and classify external requests |
+| GET | `/api/requests` | List requests (filters: category, status, priority, search) |
+| POST | `/api/requests` | Submit a new request manually |
+| GET | `/api/requests/[id]` | Get request detail with workflows and logs |
+| PATCH | `/api/requests/[id]` | Update request status or priority |
+| POST | `/api/requests/[id]/retry` | Reclassify a request |
+| GET | `/api/workflows` | List workflow records |
+| GET | `/api/logs` | List automation log events |
+| GET | `/api/stats` | Get dashboard statistics |
+| GET | `/api/health` | Health check |
+| POST | `/api/seed` | Seed database with demo data |
 
-The classification API uses a mock keyword-based classifier by default. To use OpenAI:
+## AI Classification
 
-```bash
-# Create api/.env
-OPENAI_API_KEY=your-key-here
-```
+### Mock Mode (Default)
+Keyword-based classification with confidence scoring. Supports 8 categories:
+- Support Ticket → Zendesk
+- Sales Lead → Salesforce
+- Billing → Stripe
+- Technical Issue → Jira
+- General Inquiry → General Inbox
+- Onboarding → Onboarding Team
+- Document Review → Legal Review
+- Urgent Escalation → Incident Response
 
----
+### OpenAI Mode
+Set `CLASSIFIER_MODE=openai` and provide `OPENAI_API_KEY` for GPT-4o-mini powered classification with structured data extraction.
 
-## Documentation
+## Data Model
 
-- [System Architecture](docs/architecture.md)
-- [Demo Script](docs/demo-script.md)
+**Request** — Incoming items with classification results, priority, confidence scores, and routing information
 
----
+**Workflow** — Execution records tracking how requests are processed and routed to downstream systems
 
-## Use Cases
+**AutomationLog** — Event-level audit trail recording every step in the automation pipeline
 
-- Customer support ticket routing
-- Sales lead qualification and CRM routing
-- Billing inquiry classification
-- Technical issue triage
-- Document classification workflows
+## License
+
+MIT

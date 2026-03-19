@@ -3,8 +3,12 @@ __pycache__/
 *.pyc
 *.pyo
 .env
+.env.local
 dist/
 build/
 .DS_Store
 *.egg-info/
 .vite/
+.next/
+data/*.db
+out/
