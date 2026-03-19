@@ -1,109 +1,174 @@
-# AI Automation Workflow System - Technical Architecture
+# Architecture
 
 ## System Overview
 
-The AI Automation Workflow System is an end-to-end intelligent data processing pipeline that ingests unstructured text from multiple sources, classifies it using a machine-learning-powered engine, and routes it to the appropriate downstream system for action. The architecture follows a layered, loosely coupled design where each component communicates over well-defined REST APIs, enabling independent development, testing, and deployment of each service. This separation of concerns ensures that the classification model can be updated without affecting the automation engine and that new downstream integrations can be added with minimal changes to existing code.
-
-## Architecture Diagram
+The AI Automation Workflow System is a **Next.js 15 monolith** using the App Router architecture. It combines server-side API routes, a SQLite database, an AI classification service, and a React frontend into a single deployable application.
 
 ```
-                Incoming Data
-                     |
-                     v
-               API Gateway
-                     |
-                     v
-            Data Processing Layer
-                     |
-                     v
-            AI Classification Engine
-                     |
-                     v
-             Workflow Orchestrator
-               /      |      \
-              v       v       v
-         CRM System  Ticketing  Database
+┌─────────────────────────────────────────────────────┐
+│                    Next.js Application               │
+│                                                      │
+│  ┌──────────┐  ┌──────────┐  ┌──────────────────┐  │
+│  │ Frontend  │  │ API      │  │ Service Layer    │  │
+│  │ (React)   │→ │ Routes   │→ │                  │  │
+│  │ Dashboard │  │ /api/*   │  │ ai-service.ts    │  │
+│  │ Requests  │  │          │  │ workflow-engine   │  │
+│  │ Workflows │  │ webhook  │  │ db.ts (SQLite)   │  │
+│  │ Logs      │  │ requests │  │ seed.ts          │  │
+│  │ Settings  │  │ stats    │  │                  │  │
+│  │ Demo      │  │ health   │  │                  │  │
+│  └──────────┘  └──────────┘  └──────────────────┘  │
+│                                      │               │
+│                               ┌──────┴──────┐       │
+│                               │   SQLite    │       │
+│                               │ automation  │       │
+│                               │    .db      │       │
+│                               └─────────────┘       │
+└─────────────────────────────────────────────────────┘
 ```
-
-## Component Descriptions
-
-### API Gateway (Express.js - Port 3001)
-
-The API Gateway serves as the single entry point for all external requests. Built on Express.js, it listens on port 3001 and handles webhook ingestion, request validation, and routing. It exposes REST endpoints for submitting text payloads, querying processing statistics, and retrieving activity logs. The gateway forwards classification requests to the AI Classification Engine and manages the orchestration lifecycle for each incoming item.
-
-### AI Classification Engine (Flask - Port 5001)
-
-The AI Classification Engine is a Python-based microservice built with Flask, running on port 5001. It accepts raw text input and returns a structured classification result including the predicted category, confidence score, and recommended action. The engine uses keyword-based heuristic matching to categorize incoming text into predefined categories such as support, sales, billing, and technical issues. It also exposes health-check and category-listing endpoints for operational monitoring.
-
-### Workflow Orchestrator (Node.js Module)
-
-The Workflow Orchestrator is an internal Node.js module embedded within the automation engine. It receives classification results and determines the appropriate downstream action based on category and confidence thresholds. The orchestrator routes items to CRM systems for sales leads, ticketing platforms for support requests, and the internal database for logging and audit purposes. It applies configurable business rules to decide how each classified item should be handled.
-
-### Monitoring Dashboard (React/Vite - Port 5173)
-
-The Monitoring Dashboard is a single-page application built with React and served via Vite's development server on port 5173. It provides real-time visibility into system activity, displaying classification statistics, processing logs, and category distribution charts. The dashboard polls the automation engine's API endpoints to keep its views current and uses Recharts for data visualization.
-
-## API Contract
-
-### Classification API (Port 5001)
-
-| Service              | Endpoint      | Method | Request Body                          | Response Body                                                                                         |
-|----------------------|---------------|--------|---------------------------------------|-------------------------------------------------------------------------------------------------------|
-| Classification API   | `/classify`   | POST   | `{ "text": "string" }`               | `{ "category": "string", "confidence": number, "action": "string", "timestamp": "string" }`          |
-| Classification API   | `/health`     | GET    | N/A                                   | `{ "status": "healthy", "service": "ai-classifier", "timestamp": "string" }`                         |
-| Classification API   | `/categories` | GET    | N/A                                   | `{ "categories": ["support", "sales", "billing", "technical", "general"] }`                           |
-
-### Automation Engine (Port 3001)
-
-| Service              | Endpoint       | Method | Request Body                                      | Response Body                                                                                    |
-|----------------------|----------------|--------|---------------------------------------------------|--------------------------------------------------------------------------------------------------|
-| Automation Engine    | `/webhook`     | POST   | `{ "text": "string", "source": "string" }`       | `{ "status": "processed", "id": "string", "classification": {...}, "action_taken": "string" }`  |
-| Automation Engine    | `/api/stats`   | GET    | N/A                                               | `{ "total_processed": number, "categories": {...}, "avg_confidence": number }`                   |
-| Automation Engine    | `/api/logs`    | GET    | N/A                                               | `{ "logs": [{ "id": "string", "text": "string", "category": "string", "timestamp": "string" }] }` |
-| Automation Engine    | `/api/health`  | GET    | N/A                                               | `{ "status": "healthy", "service": "automation-engine", "uptime": number }`                      |
 
 ## Data Flow
 
-1. **Ingestion** - External data arrives at the API Gateway via the `/webhook` endpoint as a JSON payload containing raw text and its source identifier.
-2. **Validation** - The API Gateway validates the incoming request structure, ensures required fields are present, and assigns a unique processing ID to the item.
-3. **Classification** - The validated text is forwarded to the AI Classification Engine at `http://localhost:5001/classify`, which analyzes the content and returns a category, confidence score, and recommended action.
-4. **Orchestration** - The Workflow Orchestrator receives the classification result and evaluates it against configured business rules to determine the appropriate downstream destination.
-5. **Routing** - Based on the classification category, the orchestrator routes the item to the corresponding system: CRM for sales leads, ticketing platform for support requests, or direct database storage for general items.
-6. **Logging** - Every processed item, along with its classification result and routing decision, is recorded in the internal log store and reflected in the aggregated statistics accessible through the dashboard.
-
-## Technology Choices
-
-| Technology | Role                    | Justification                                                                                                    |
-|------------|-------------------------|------------------------------------------------------------------------------------------------------------------|
-| Flask      | Classification Service  | Lightweight Python framework well-suited for ML/NLP microservices; minimal boilerplate allows focus on model logic. |
-| Express.js | API Gateway / Engine    | Fast, unopinionated Node.js framework ideal for building REST APIs and webhook handlers with extensive middleware support. |
-| React      | Dashboard UI            | Component-based architecture enables modular, maintainable UI development with a rich ecosystem of supporting libraries. |
-| Recharts   | Data Visualization      | Composable charting library built on React components; integrates naturally with the dashboard's component model.  |
-| Vite       | Frontend Build Tool     | Provides near-instant hot module replacement during development and optimized production builds with minimal configuration. |
-
-## Local Deployment Notes
-
-The system requires three terminals to run all services concurrently during local development:
-
-**Terminal 1 - AI Classification Engine (Port 5001)**
-```bash
-cd ai-classifier
-pip install -r requirements.txt
-python app.py
+```
+External Source (email, webhook, form, API)
+    │
+    ▼
+POST /api/webhook or POST /api/requests
+    │
+    ├── 1. Create Request record (status: pending)
+    ├── 2. Log "request_received" event
+    │
+    ▼
+AI Classification Service (ai-service.ts)
+    │
+    ├── Mock mode: keyword matching + confidence scoring
+    └── OpenAI mode: GPT-4o-mini structured classification
+    │
+    ├── 3. Log "classification_completed" event
+    ├── 4. Update Request (category, priority, confidence, extractedData)
+    │
+    ▼
+Workflow Engine (workflow-engine.ts)
+    │
+    ├── 5. Create Workflow record (status: in_progress)
+    ├── 6. Route to appropriate handler (Zendesk, Salesforce, etc.)
+    ├── 7. Update Workflow (status: completed, actionTaken)
+    ├── 8. Log "routing_completed" event
+    │
+    ▼
+Request status → "routed" → visible in Dashboard
 ```
 
-**Terminal 2 - Automation Engine / API Gateway (Port 3001)**
-```bash
-cd automation-engine
-npm install
-node server.js
+## Directory Structure
+
+```
+src/
+├── app/                    # Next.js App Router (pages + API)
+│   ├── layout.tsx          # Root layout with sidebar navigation
+│   ├── globals.css         # Tailwind CSS imports + base styles
+│   ├── dashboard/          # Analytics overview page
+│   ├── requests/           # Request list + detail pages
+│   ├── workflows/          # Workflow execution history
+│   ├── logs/               # Activity event log
+│   ├── settings/           # System configuration display
+│   ├── demo/               # Testing tools + seed data management
+│   └── api/                # REST API endpoints (9 routes)
+├── lib/                    # Server-side business logic
+│   ├── types.ts            # TypeScript interfaces + enums
+│   ├── db.ts               # SQLite connection singleton + schema
+│   ├── seed.ts             # 25+ realistic demo records
+│   ├── ai-service.ts       # AI classification (mock + OpenAI)
+│   └── workflow-engine.ts  # Workflow routing + logging
+└── components/             # Shared React components
+    ├── layout/             # Sidebar navigation
+    └── shared/             # Badge, card, timeline, etc.
 ```
 
-**Terminal 3 - Monitoring Dashboard (Port 5173)**
-```bash
-cd dashboard
-npm install
-npm run dev
-```
+## Service Layer
 
-Once all three services are running, the system is fully operational. The classification engine must be started first, as the automation engine depends on it for processing incoming webhooks. The dashboard can be started at any time and will begin displaying data as soon as it connects to the automation engine API.
+### db.ts — Database
+- Singleton `better-sqlite3` connection with WAL journal mode
+- Auto-creates tables and indexes on first access
+- Three tables: `requests`, `workflows`, `automation_logs`
+- Foreign key constraints between tables
+
+### ai-service.ts — AI Classification
+- **Mock mode** (default): Keyword map matching across 8 categories with confidence formula: `base 0.65 + (matches - 1) * 0.08, max 0.97`
+- **OpenAI mode**: GPT-4o-mini with structured JSON prompt, falls back to mock on failure
+- Extracts structured data (emails, amounts, dates, company names) from request text
+- Determines priority based on category + intensity keywords
+- Generates route recommendations and summaries
+
+### workflow-engine.ts — Routing
+- Maps categories to destination systems (Zendesk, Salesforce, Stripe, Jira, etc.)
+- Creates Workflow records in database
+- Logs all events to automation_logs table
+- Simulates realistic processing delays
+
+### seed.ts — Demo Data
+- 25 realistic business requests across all 8 categories
+- Matching Workflow records per request
+- 3-4 AutomationLog entries per request (received, classified, routed + extras)
+- Timestamps spread across 7 days
+- Mixed statuses (pending, classified, routed, in_progress, completed)
+
+## Database Schema
+
+### requests
+| Column | Type | Description |
+|--------|------|-------------|
+| id | TEXT PK | UUID |
+| sourceType | TEXT | email, web_form, slack, api, upload, support_portal |
+| sourceRef | TEXT | External reference ID |
+| title | TEXT | Request title |
+| rawContent | TEXT | Full request content |
+| extractedData | TEXT | JSON of extracted fields |
+| category | TEXT | AI-assigned category |
+| priority | TEXT | low, medium, high, critical |
+| confidence | REAL | 0.0 - 1.0 confidence score |
+| routeDestination | TEXT | Target system name |
+| status | TEXT | pending, classified, routed, in_progress, completed, failed |
+| createdAt | TEXT | ISO timestamp |
+| updatedAt | TEXT | ISO timestamp |
+
+### workflows
+| Column | Type | Description |
+|--------|------|-------------|
+| id | TEXT PK | UUID |
+| requestId | TEXT FK | References requests.id |
+| workflowType | TEXT | Workflow category name |
+| assignedQueue | TEXT | Target team/system |
+| actionTaken | TEXT | Description of action |
+| status | TEXT | pending, in_progress, completed, failed |
+| createdAt | TEXT | ISO timestamp |
+| updatedAt | TEXT | ISO timestamp |
+
+### automation_logs
+| Column | Type | Description |
+|--------|------|-------------|
+| id | TEXT PK | UUID |
+| requestId | TEXT FK | References requests.id |
+| eventType | TEXT | Event category |
+| message | TEXT | Human-readable description |
+| metadata | TEXT | JSON payload |
+| createdAt | TEXT | ISO timestamp |
+
+## Frontend Architecture
+
+All pages are client-side rendered (`'use client'`) and fetch data from the API routes. Components use Tailwind CSS for styling with a professional slate/gray color palette.
+
+### Pages
+- **Dashboard** — Stats cards, category chart, priority/status breakdown, recent activity
+- **Requests** — Paginated table with category/status/priority/search filters
+- **Request Detail** — Full content, AI classification panel, extracted fields, workflow history, automation timeline
+- **Workflows** — Filterable workflow table with request links
+- **Logs** — Activity event log with event type filter
+- **Settings** — System status, classifier mode, environment info, category routing map
+- **Demo** — Manual submission form, webhook tester, seed data button
+
+### Shared Components
+- `badge.tsx` — Color-coded badges for categories, priorities, statuses
+- `card.tsx` — Consistent card wrapper with title/subtitle
+- `confidence-bar.tsx` — Visual confidence score with color-coded progress bar
+- `empty-state.tsx` — Placeholder for empty data views
+- `timeline.tsx` — Vertical event timeline with icons and timestamps

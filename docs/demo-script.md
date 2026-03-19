@@ -1,226 +1,141 @@
-# AI Automation Workflow System - Demo Script
+# Demo Script
+
+A step-by-step guide for demonstrating the AI Automation Workflow System.
 
 ## Prerequisites
 
-Before running the demo, ensure the following tools are installed on your machine:
-
-- **Node.js** 18+ (verify with `node --version`)
-- **Python** 3.10+ (verify with `python3 --version`)
-- **npm** (bundled with Node.js; verify with `npm --version`)
-- **pip** (bundled with Python; verify with `pip --version`)
-
-## Setup Instructions
-
-Open three separate terminal windows and start each service in the order listed below.
-
-### Terminal 1 - AI Classification Engine
-
 ```bash
-cd ai-classifier
-pip install -r requirements.txt
-python app.py
-```
-
-You should see output indicating the Flask server is running on `http://localhost:5001`.
-
-### Terminal 2 - Automation Engine
-
-```bash
-cd automation-engine
-npm install
-node server.js
-```
-
-You should see output indicating the Express server is running on `http://localhost:3001`.
-
-### Terminal 3 - Monitoring Dashboard
-
-```bash
-cd dashboard
 npm install
 npm run dev
+# Open http://localhost:3000
 ```
-
-You should see output from Vite indicating the development server is available at `http://localhost:5173`.
-
-## Demo Flow
-
-Work through the following steps in order. Each step builds on the previous one to demonstrate the full processing pipeline.
-
-### Step 1: Health Check
-
-Verify the classification engine is running and responsive.
-
-```bash
-curl http://localhost:5001/health
-```
-
-**Expected Output:**
-
-```json
-{
-  "status": "healthy",
-  "service": "ai-classifier",
-  "timestamp": "2026-03-12T10:00:00.000Z"
-}
-```
-
-This confirms the AI Classification Engine is online and ready to accept requests.
-
-### Step 2: Classify Text
-
-Send a text sample directly to the classification engine to see how it categorizes input.
-
-```bash
-curl -X POST http://localhost:5001/classify \
-  -H "Content-Type: application/json" \
-  -d '{"text": "I need help with a refund for my recent purchase"}'
-```
-
-**Expected Output:**
-
-```json
-{
-  "category": "billing",
-  "confidence": 0.85,
-  "action": "route_to_billing",
-  "timestamp": "2026-03-12T10:01:00.000Z"
-}
-```
-
-The engine identifies this as a billing-related request due to the presence of the keyword "refund" and returns a confidence score along with the recommended routing action.
-
-### Step 3: Process via Webhook
-
-Submit a payload through the full automation pipeline via the webhook endpoint.
-
-```bash
-curl -X POST http://localhost:3001/webhook \
-  -H "Content-Type: application/json" \
-  -d '{"text": "I need help with a refund", "source": "email"}'
-```
-
-**Expected Output:**
-
-```json
-{
-  "status": "processed",
-  "id": "wh-1678-abc123",
-  "classification": {
-    "category": "billing",
-    "confidence": 0.85,
-    "action": "route_to_billing"
-  },
-  "action_taken": "Routed to billing queue"
-}
-```
-
-This demonstrates the complete pipeline: the automation engine receives the webhook, forwards the text to the classifier, processes the result through the orchestrator, and returns the final outcome.
-
-### Step 4: Check Stats
-
-Query the aggregated processing statistics to see a summary of all items handled so far.
-
-```bash
-curl http://localhost:3001/api/stats
-```
-
-**Expected Output:**
-
-```json
-{
-  "total_processed": 1,
-  "categories": {
-    "billing": 1
-  },
-  "avg_confidence": 0.85
-}
-```
-
-The stats endpoint provides a running tally of how many items have been processed, broken down by category, along with the average classification confidence.
-
-### Step 5: View Logs
-
-Retrieve the detailed processing log for all items that have passed through the system.
-
-```bash
-curl http://localhost:3001/api/logs
-```
-
-**Expected Output:**
-
-```json
-{
-  "logs": [
-    {
-      "id": "wh-1678-abc123",
-      "text": "I need help with a refund",
-      "source": "email",
-      "category": "billing",
-      "confidence": 0.85,
-      "action_taken": "Routed to billing queue",
-      "timestamp": "2026-03-12T10:02:00.000Z"
-    }
-  ]
-}
-```
-
-Each log entry contains the full processing record including the original text, source, classification result, and the action taken by the orchestrator.
-
-## Additional Test Scenarios
-
-After completing the primary demo flow, submit these additional payloads to demonstrate the system's ability to handle different categories of input.
-
-### Support Ticket
-
-```bash
-curl -X POST http://localhost:3001/webhook \
-  -H "Content-Type: application/json" \
-  -d '{"text": "My account is locked and I cannot log in. Please help me reset my password.", "source": "web_form"}'
-```
-
-**Expected Result:** Classified as `support` with routing to the ticketing system.
-
-### Sales Lead
-
-```bash
-curl -X POST http://localhost:3001/webhook \
-  -H "Content-Type: application/json" \
-  -d '{"text": "We are interested in your enterprise plan. Can we schedule a demo for our team of 50?", "source": "contact_form"}'
-```
-
-**Expected Result:** Classified as `sales` with routing to the CRM system.
-
-### Billing Inquiry
-
-```bash
-curl -X POST http://localhost:3001/webhook \
-  -H "Content-Type: application/json" \
-  -d '{"text": "I was charged twice on my last invoice. Please issue a credit for the duplicate payment.", "source": "email"}'
-```
-
-**Expected Result:** Classified as `billing` with routing to the billing queue.
-
-### Technical Issue
-
-```bash
-curl -X POST http://localhost:3001/webhook \
-  -H "Content-Type: application/json" \
-  -d '{"text": "The API is returning 500 errors when I send POST requests to the /users endpoint.", "source": "slack"}'
-```
-
-**Expected Result:** Classified as `technical` with routing to the engineering team.
 
 ---
 
-After submitting all test scenarios, run `curl http://localhost:3001/api/stats` again to see the updated category distribution and overall processing count.
+## Step 1: Seed Demo Data
 
-## Monitoring Dashboard
+1. Navigate to **Demo** page (`/demo`)
+2. Click the **Seed Demo Data** button
+3. You should see: "Database seeded with 25 requests, 25 workflows, and 85 log entries"
 
-Open your browser and navigate to **http://localhost:5173** to view the Monitoring Dashboard. The dashboard provides:
+---
 
-- **Real-time statistics** showing total items processed and average confidence scores
-- **Category distribution charts** rendered with Recharts, visualizing how incoming items are distributed across categories
-- **Activity log table** displaying the most recent processing events with their classification details
+## Step 2: Dashboard Overview
 
-The dashboard automatically polls the automation engine API for updates, so new items submitted via the webhook will appear in the interface without requiring a manual refresh.
+Navigate to **Dashboard** (`/dashboard`):
+
+1. **Stats Cards** — Show total requests (25+), success rate (~64%), average confidence (~90%), active workflows
+2. **Recent Activity** — Table showing the latest 10 processed requests with categories, priorities, and confidence scores
+3. **Classification Breakdown** — Bar chart showing distribution across all 8 categories
+4. **By Priority** — Visual breakdown of low/medium/high/critical requests
+5. **By Status** — Visual breakdown of pending/classified/routed/in_progress/completed
+
+**Key talking point:** "The dashboard gives operations teams an at-a-glance view of how the automation system is performing."
+
+---
+
+## Step 3: Request List
+
+Navigate to **Requests** (`/requests`):
+
+1. Show the full list of 25+ requests with titles, sources, categories, priorities, confidence scores, and statuses
+2. **Filter by category** — Select "Billing" to show only billing-related requests
+3. **Filter by priority** — Select "Critical" to show urgent items
+4. **Search** — Type "database" to find the database timeout request
+5. **Pagination** — Show next/previous page controls
+
+**Key talking point:** "Teams can quickly filter and find specific requests using any combination of filters."
+
+---
+
+## Step 4: Request Detail
+
+Click on any request (e.g., "Production database is down"):
+
+1. **Header** — Title, status badge, category badge, priority badge, timestamp
+2. **Request Content** — Full original request text with source type
+3. **AI Classification Result** — Shows category, priority, confidence score bar, and route destination
+4. **Extracted Fields** — Structured data pulled from the request (emails, amounts, companies, etc.)
+5. **Workflows** — Table showing workflow type, assigned queue, action taken, status
+6. **Automation Timeline** — Chronological event log (received → classified → routed)
+7. **Reclassify Button** — Click to re-run AI classification
+
+**Key talking point:** "Every request has a complete audit trail showing exactly what the AI decided and why."
+
+---
+
+## Step 5: Live Classification
+
+Navigate to **Demo** page (`/demo`):
+
+1. In the **Manual Request Submission** form:
+   - Title: "Cannot access billing portal after payment"
+   - Content: "I made a payment yesterday but still cannot access the billing portal. My invoice number is INV-2024-001 and I was charged $299.99. Please help."
+   - Source: "Email"
+2. Click **Submit & Classify**
+3. Show the result: category (billing), priority, confidence, route destination
+4. Click "View Full Details" to see the complete request page
+
+---
+
+## Step 6: Webhook Test
+
+Still on the **Demo** page:
+
+1. In the **Webhook Test** panel, use this JSON:
+```json
+{
+  "text": "URGENT: Security vulnerability detected in production API. Unauthorized access from IP 10.0.0.1. Immediate action required.",
+  "source": "security_scanner",
+  "title": "Security Alert - Unauthorized Access"
+}
+```
+2. Click **Send Webhook**
+3. Show the response with classification: `urgent_escalation`, priority: `critical`, routed to `Incident Response Team`
+
+**Key talking point:** "External systems can integrate via the webhook API — monitoring tools, email parsers, CRM systems — anything that can send JSON."
+
+---
+
+## Step 7: Workflows
+
+Navigate to **Workflows** (`/workflows`):
+
+1. Show the complete list of workflow executions
+2. Each row shows: request title, workflow type, assigned queue, action taken, status
+3. Filter by status to show "In Progress" workflows
+
+**Key talking point:** "The workflow engine handles routing automatically — each category maps to a specific team and system."
+
+---
+
+## Step 8: Activity Log
+
+Navigate to **Activity Log** (`/logs`):
+
+1. Show the full event timeline across all requests
+2. Each event has a colored dot, event type, request link, message, and timestamp
+3. Filter by event type (e.g., "Classification Completed" or "Error")
+
+**Key talking point:** "The audit trail captures every step — from ingestion to classification to routing. Essential for compliance and debugging."
+
+---
+
+## Step 9: Settings
+
+Navigate to **Settings** (`/settings`):
+
+1. **System Status** — Health indicator, classifier mode, uptime
+2. **AI Classification Engine** — Mock mode vs OpenAI mode descriptions
+3. **Environment Variables** — Configuration overview
+4. **Supported Categories** — All 8 categories with their routing destinations
+
+**Key talking point:** "The system works out of the box with mock classification. Drop in an OpenAI API key to upgrade to GPT-4o-mini."
+
+---
+
+## Closing Points
+
+- **Built with:** Next.js 15, React 19, TypeScript, Tailwind CSS, SQLite, OpenAI
+- **Key capabilities demonstrated:** AI integration, workflow automation, webhook handling, real-time dashboards, full-stack development
+- **Production-ready patterns:** Service layer architecture, typed APIs, database indexing, error handling, audit logging
