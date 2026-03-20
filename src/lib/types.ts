@@ -74,6 +74,7 @@ export interface DashboardStats {
   categoryBreakdown: Record<string, number>
   priorityBreakdown: Record<string, number>
   statusBreakdown: Record<string, number>
+  requestsOverTime: Array<{ date: string; count: number }>
   recentActivity: (Request & { workflowStatus?: string })[]
 }
 

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -14,6 +15,19 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const [mode, setMode] = useState<string>('mock')
+
+  useEffect(() => {
+    const fetchMode = () => {
+      fetch('/api/settings')
+        .then(r => r.json())
+        .then(data => setMode(data.classifierMode || 'mock'))
+        .catch(() => {})
+    }
+    fetchMode()
+    const interval = setInterval(fetchMode, 5000)
+    return () => clearInterval(interval)
+  }, [])
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-60 bg-slate-900 text-slate-300 flex flex-col z-50">
@@ -53,8 +67,8 @@ export default function Sidebar() {
 
       <div className="px-4 py-3 border-t border-slate-700/50">
         <div className="flex items-center gap-2 text-[11px] text-slate-500">
-          <div className="w-2 h-2 rounded-full bg-emerald-400" />
-          Mock Mode Active
+          <div className={`w-2 h-2 rounded-full ${mode === 'openai' ? 'bg-blue-400' : 'bg-emerald-400'}`} />
+          {mode === 'openai' ? 'OpenAI Mode' : 'Mock Mode'} Active
         </div>
       </div>
     </aside>

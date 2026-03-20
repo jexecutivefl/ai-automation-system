@@ -261,14 +261,27 @@ Do not include any text outside the JSON object.`;
 // Public API
 // ---------------------------------------------------------------------------
 
+// Runtime override for classifier mode (resets on server restart)
+let classifierModeOverride: 'mock' | 'openai' | null = null;
+
 /**
- * Returns the active classifier mode based on environment configuration.
+ * Returns the active classifier mode based on runtime override or environment configuration.
  */
 export function getClassifierMode(): 'mock' | 'openai' {
+  if (classifierModeOverride) {
+    return classifierModeOverride;
+  }
   if (process.env.OPENAI_API_KEY && process.env.CLASSIFIER_MODE === 'openai') {
     return 'openai';
   }
   return 'mock';
+}
+
+/**
+ * Sets the classifier mode at runtime (persists until server restart).
+ */
+export function setClassifierMode(mode: 'mock' | 'openai'): void {
+  classifierModeOverride = mode;
 }
 
 /**
