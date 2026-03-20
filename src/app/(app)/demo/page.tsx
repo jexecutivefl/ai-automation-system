@@ -47,7 +47,10 @@ export default function DemoPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: title.trim(), content: content.trim(), sourceType }),
       })
-      if (!res.ok) throw new Error('Failed to submit request')
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => null)
+        throw new Error(errBody?.error || `Server error (${res.status})`)
+      }
       const json = await res.json()
       setResult(json.data)
       setTitle('')
@@ -72,6 +75,9 @@ export default function DemoPage() {
         body: webhookBody,
       })
       const json = await res.json()
+      if (!res.ok) {
+        throw new Error(json?.error || `Webhook failed (${res.status})`)
+      }
       setWebhookResult(JSON.stringify(json, null, 2))
       toast('Webhook processed', 'info')
     } catch (err) {
@@ -88,6 +94,9 @@ export default function DemoPage() {
     try {
       const res = await fetch('/api/seed', { method: 'POST' })
       const json = await res.json()
+      if (!res.ok) {
+        throw new Error(json?.error || `Seed failed (${res.status})`)
+      }
       setSeedResult(json.message || 'Database seeded successfully!')
       toast('Database seeded with demo data', 'success')
     } catch {
