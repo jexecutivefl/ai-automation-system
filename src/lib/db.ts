@@ -1,24 +1,50 @@
 import Database from 'better-sqlite3'
 import path from 'path'
 
-const DB_PATH = process.env.DATABASE_PATH || path.join(process.cwd(), 'data', 'automation.db')
+function getDbPath(): string {
+  if (process.env.DATABASE_PATH) {
+    return process.env.DATABASE_PATH
+  }
+  if (process.env.VERCEL) {
+    return '/tmp/automation.db'
+  }
+  return path.join(process.cwd(), 'data', 'automation.db')
+}
+
+const DB_PATH = getDbPath()
 
 let db: Database.Database | null = null
 
 export function getDb(): Database.Database {
-  if (!db) {
-    // Ensure data directory exists
-    const fs = require('fs')
-    const dir = path.dirname(DB_PATH)
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true })
+  if (db) {
+    try {
+      db.prepare('SELECT 1').get()
+      return db
+    } catch {
+      db = null
     }
-
-    db = new Database(DB_PATH)
-    db.pragma('journal_mode = WAL')
-    db.pragma('foreign_keys = ON')
-    initSchema(db)
   }
+
+  const fs = require('fs')
+  const dir = path.dirname(DB_PATH)
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true })
+  }
+
+  db = new Database(DB_PATH)
+  db.pragma('journal_mode = WAL')
+  db.pragma('foreign_keys = ON')
+  initSchema(db)
+
+  // Auto-seed on Vercel where /tmp is ephemeral
+  if (process.env.VERCEL) {
+    const count = (db.prepare('SELECT COUNT(*) as count FROM requests').get() as { count: number }).count
+    if (count === 0) {
+      const { seedDatabase } = require('./seed')
+      seedDatabase()
+    }
+  }
+
   return db
 }
 
