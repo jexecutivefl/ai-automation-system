@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Card from '@/components/shared/card'
 import { CategoryBadge, StatusBadge, PriorityBadge } from '@/components/shared/badge'
 import ConfidenceBar from '@/components/shared/confidence-bar'
 import Timeline from '@/components/shared/timeline'
+import { useToast } from '@/components/shared/toast'
 
 interface RequestDetail {
   id: string
@@ -60,10 +61,10 @@ function parseExtractedData(json: string): Record<string, string> {
 
 export default function RequestDetailPage() {
   const params = useParams()
-  const router = useRouter()
   const [request, setRequest] = useState<RequestDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [retrying, setRetrying] = useState(false)
+  const { toast } = useToast()
 
   const fetchRequest = useCallback(async () => {
     try {
@@ -84,7 +85,14 @@ export default function RequestDetailPage() {
     setRetrying(true)
     try {
       const res = await fetch(`/api/requests/${params.id}/retry`, { method: 'POST' })
-      if (res.ok) await fetchRequest()
+      if (res.ok) {
+        await fetchRequest()
+        toast('Request reclassified successfully', 'success')
+      } else {
+        toast('Reclassification failed', 'error')
+      }
+    } catch {
+      toast('Reclassification failed', 'error')
     } finally {
       setRetrying(false)
     }

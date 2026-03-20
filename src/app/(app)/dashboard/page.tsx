@@ -6,6 +6,9 @@ import Card from '@/components/shared/card'
 import { CategoryBadge, StatusBadge, PriorityBadge } from '@/components/shared/badge'
 import ConfidenceBar from '@/components/shared/confidence-bar'
 import EmptyState from '@/components/shared/empty-state'
+import CategoryPieChart from '@/components/charts/category-pie-chart'
+import PriorityBarChart from '@/components/charts/priority-bar-chart'
+import RequestsAreaChart from '@/components/charts/requests-area-chart'
 
 interface Stats {
   totalRequests: number
@@ -15,6 +18,7 @@ interface Stats {
   categoryBreakdown: Record<string, number>
   priorityBreakdown: Record<string, number>
   statusBreakdown: Record<string, number>
+  requestsOverTime: Array<{ date: string; count: number }>
   recentActivity: Array<{
     id: string
     title: string
@@ -32,10 +36,6 @@ const statCards = [
   { key: 'successRate', label: 'Success Rate', icon: '✓', format: (v: number) => `${Math.round(v)}%` },
   { key: 'averageConfidence', label: 'Avg Confidence', icon: '◎', format: (v: number) => `${Math.round(v * 100)}%` },
   { key: 'activeWorkflows', label: 'Active Workflows', icon: '⚡', format: (v: number) => v.toString() },
-]
-
-const CATEGORY_COLORS = [
-  '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#64748b',
 ]
 
 export default function DashboardPage() {
@@ -99,9 +99,6 @@ export default function DashboardPage() {
 
   if (!stats) return null
 
-  const categoryEntries = Object.entries(stats.categoryBreakdown)
-  const totalCategories = categoryEntries.reduce((sum, [, c]) => sum + c, 0)
-
   return (
     <div className="p-8">
       <div className="mb-6">
@@ -123,6 +120,17 @@ export default function DashboardPage() {
           </div>
         ))}
       </div>
+
+      {/* Requests Over Time */}
+      {stats.requestsOverTime && stats.requestsOverTime.length > 0 && (
+        <div className="mb-6">
+          <Card title="Requests Over Time" subtitle="Daily request volume">
+            <div className="px-4 py-4">
+              <RequestsAreaChart data={stats.requestsOverTime} />
+            </div>
+          </Card>
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-4 mb-6">
         {/* Recent Activity */}
@@ -170,29 +178,13 @@ export default function DashboardPage() {
           )}
         </Card>
 
-        {/* Category Breakdown */}
+        {/* Category Breakdown - Pie Chart */}
         <Card title="Classification Breakdown" subtitle="Requests by category">
-          {categoryEntries.length === 0 ? (
+          {Object.keys(stats.categoryBreakdown).length === 0 ? (
             <EmptyState title="No data" description="No classifications recorded yet." />
           ) : (
-            <div className="px-5 py-4 space-y-3">
-              {categoryEntries.map(([cat, count], idx) => {
-                const pct = totalCategories > 0 ? Math.round((count / totalCategories) * 100) : 0
-                const color = CATEGORY_COLORS[idx % CATEGORY_COLORS.length]
-                return (
-                  <div key={cat}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium text-slate-700">
-                        {cat.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                      </span>
-                      <span className="text-xs text-slate-500 tabular-nums">{count} ({pct}%)</span>
-                    </div>
-                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
-                    </div>
-                  </div>
-                )
-              })}
+            <div className="px-2 py-2">
+              <CategoryPieChart data={stats.categoryBreakdown} />
             </div>
           )}
         </Card>
@@ -200,18 +192,16 @@ export default function DashboardPage() {
 
       {/* Priority & Status Summary */}
       <div className="grid grid-cols-2 gap-4">
-        <Card title="By Priority">
-          <div className="px-5 py-4 flex gap-6">
-            {Object.entries(stats.priorityBreakdown).map(([priority, count]) => (
-              <div key={priority} className="text-center">
-                <p className="text-lg font-bold text-slate-900 tabular-nums">{count}</p>
-                <PriorityBadge priority={priority} />
-              </div>
-            ))}
-            {Object.keys(stats.priorityBreakdown).length === 0 && (
+        <Card title="By Priority" subtitle="Request distribution by priority level">
+          {Object.keys(stats.priorityBreakdown).length === 0 ? (
+            <div className="px-5 py-4">
               <p className="text-xs text-slate-400">No data</p>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="px-4 py-4">
+              <PriorityBarChart data={stats.priorityBreakdown} />
+            </div>
+          )}
         </Card>
         <Card title="By Status">
           <div className="px-5 py-4 flex gap-6">

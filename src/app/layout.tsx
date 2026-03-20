@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import Sidebar from '@/components/layout/sidebar'
+import { ToastProvider } from '@/components/shared/toast'
 
 export const metadata: Metadata = {
   title: 'AI Automation Workflow System',
@@ -11,10 +11,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="bg-slate-50 text-slate-900 antialiased">
-        <Sidebar />
-        <main className="ml-60 min-h-screen">
+        <ToastProvider>
           {children}
-        </main>
+        </ToastProvider>
       </body>
     </html>
   )

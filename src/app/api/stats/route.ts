@@ -53,6 +53,11 @@ export async function GET() {
       statusBreakdown[row.status] = row.count
     }
 
+    // Requests over time (last 14 days)
+    const requestsOverTime = db.prepare(
+      "SELECT substr(createdAt, 1, 10) as date, COUNT(*) as count FROM requests GROUP BY substr(createdAt, 1, 10) ORDER BY date ASC LIMIT 14"
+    ).all() as { date: string; count: number }[]
+
     // Recent activity: last 10 requests
     const recentActivity = db.prepare(
       'SELECT * FROM requests ORDER BY createdAt DESC LIMIT 10'
@@ -66,6 +71,7 @@ export async function GET() {
       categoryBreakdown,
       priorityBreakdown,
       statusBreakdown,
+      requestsOverTime,
       recentActivity,
     }
 

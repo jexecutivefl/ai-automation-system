@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import Card from '@/components/shared/card'
-import { CategoryBadge, StatusBadge, PriorityBadge } from '@/components/shared/badge'
+import { CategoryBadge, PriorityBadge } from '@/components/shared/badge'
 import ConfidenceBar from '@/components/shared/confidence-bar'
+import { useToast } from '@/components/shared/toast'
 
 interface SubmitResult {
   id: string
@@ -32,6 +33,8 @@ export default function DemoPage() {
   const [seeding, setSeeding] = useState(false)
   const [seedResult, setSeedResult] = useState<string | null>(null)
 
+  const { toast } = useToast()
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim() || !content.trim()) return
@@ -49,8 +52,11 @@ export default function DemoPage() {
       setResult(json.data)
       setTitle('')
       setContent('')
+      toast('Request classified successfully!', 'success')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Submission failed')
+      const msg = err instanceof Error ? err.message : 'Submission failed'
+      setError(msg)
+      toast(msg, 'error')
     } finally {
       setSubmitting(false)
     }
@@ -67,8 +73,10 @@ export default function DemoPage() {
       })
       const json = await res.json()
       setWebhookResult(JSON.stringify(json, null, 2))
+      toast('Webhook processed', 'info')
     } catch (err) {
       setWebhookResult(`Error: ${err instanceof Error ? err.message : 'Failed'}`)
+      toast('Webhook request failed', 'error')
     } finally {
       setWebhookSubmitting(false)
     }
@@ -81,8 +89,10 @@ export default function DemoPage() {
       const res = await fetch('/api/seed', { method: 'POST' })
       const json = await res.json()
       setSeedResult(json.message || 'Database seeded successfully!')
+      toast('Database seeded with demo data', 'success')
     } catch {
       setSeedResult('Failed to seed database')
+      toast('Failed to seed database', 'error')
     } finally {
       setSeeding(false)
     }
