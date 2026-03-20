@@ -12,3 +12,4 @@ build/
 .next/
 data/*.db
 out/
+tsconfig.tsbuildinfo
